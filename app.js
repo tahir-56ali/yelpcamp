@@ -16,13 +16,15 @@ const User = require('./models/user');
 const mongoSanitize = require('express-mongo-sanitize');
 const helmet = require('helmet');
 
+const MongoStore = require('connect-mongo');
 
 const campgroundRoutes = require('./routes/campgrounds');
 const reviewRoutes = require('./routes/reviews');
 const userRoutes = require('./routes/users');
 
+const dbUrl = 'mongodb://127.0.0.1:27017/yelp-camp';
 mongoose.set('strictQuery', false);
-mongoose.connect('mongodb://127.0.0.1:27017/yelp-camp', {
+mongoose.connect(dbUrl, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
@@ -46,7 +48,17 @@ app.use(mongoSanitize({
     replaceWith: '_',
   }));
 
+const store = MongoStore.create({
+    mongoUrl: dbUrl,
+    touchAfter: 24 * 60 * 60
+});
+
+store.on("error", function (e) {
+    console.log("SESSION STORE ERROR", e)
+});
+
 const sessionConfig = {
+    store,
     name: 'yelpcamp',
     secret: 'thisshouldbeabettersecret!',
     resave: false,
